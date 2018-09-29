@@ -17,9 +17,9 @@ const mongoose = require('mongoose')
 const gospelIntent = '찬송가찾기'
 
 
- // parse application/json
+// parse application/json
 app.use(bodyParser.json());
-  // parse application/x-www-form-urlencoded
+// parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // mongoose connect
@@ -43,19 +43,14 @@ const failMessage = {
     "text" : "죄송합니다. 찾지 못했습니다"
   } 
 };
-  //초기 상태 get
+//초기 상태 get
 app.get('/keyboard', function(req, res){
-    /*
-  const menu = {
-      "type": 'buttons',
-      "buttons": ["안녕", "메롱"]
-  };
-
-*/
-
   console.log('req = ',req)
   const menu = {
-    "type" : "text"
+    "type" : "text",
+    "message" : {
+      "text" : "샬롬. 찬송가 검색을 위해 찬송가 장수나 가사를 입력해주세요."
+    }
   }
   //if (req.query.)
   res.set({
@@ -80,7 +75,7 @@ const findIntent = (result) => {
 async function invokeGospelSearch(value) {
   const result = await googleImage.getImageUrl("찬송가 " + value + "장")
   console.log('get Image =>>>>> ',result.data.items)
-    
+
   if (result.data.items && result.data.items[0].image) {
 
     const homepage = result.data.items[0].image.contextLink
@@ -104,8 +99,8 @@ const sendImage = (url, homepage, width, height, value)=> {
   };
   return message
 }  
-  // 메시지 처리
-  
+// 메시지 처리
+
 app.post('/message',async function (req, res) {
 
   const _obj = {
@@ -133,7 +128,6 @@ app.post('/message',async function (req, res) {
       message = returnOption(boards) 
 
     }
-    //message = message ? message : failMessage
   }
 
   res.set({
@@ -151,13 +145,13 @@ function returnOption(boards) {
     arr.push(v.seq + "장 제목 : " + v.title)
   })
   const buttons = {
-      "message": {
-	"text": "여러건이 검색되었습니다"
-      },
-      "keyboard": {
-	"type": "buttons",
-        "buttons": arr 
-      }
+    "message": {
+      "text": "여러 건이 검색되었습니다"
+    },
+    "keyboard": {
+      "type": "buttons",
+      "buttons": arr 
+    }
   };
   return buttons
 }
@@ -171,17 +165,16 @@ async function getGospelLyrics(message) {
 
   return new Promise(function(resolve, reject ) {
     Board.find({ $or: [{ "title": { $regex: message}}, {"contents": { $regex: message}} ] }, function(err, boards) {
-  //await Board.find({ $or: [{ "title": { $regex: message}}, {"contents": { $regex: message}} ] }   ).limit(5).exec(function(err, boards) {
+      //await Board.find({ $or: [{ "title": { $regex: message}}, {"contents": { $regex: message}} ] }   ).limit(5).exec(function(err, boards) {
 
-    console.log('time = > ' + (Date.now() - startTime))
-    console.log('boards = ', boards)
-    //return new Promise(function(resolve) {
-	resolve(boards)
-}).limit(5)
-})
+      console.log('time = > ' + (Date.now() - startTime))
+      //console.log('boards = ', boards)
+      resolve(boards)
+    }).limit(5)
+  })
 
-   
-    /*
+
+  /*
     var tt = Date.now()
   await Board.find({ $text: { $search: message }}, {score : { $meta: "textScore"}}).sort( {
     score: { $meta: 'textScore'} 
@@ -197,17 +190,6 @@ async function getGospelLyrics(message) {
 
 function replaceSpace() {
   var board = new Board()
-    /*j
-  Board.update({},
-    function(err, doc) {
-      var tt = doc.title
-      tt = tt.replace(/ /gi, "")
-      console.log('doc.title = ' + tt)
-      //      Board.update({"_id": doc._id}, {"$set": { "title": doc.title}}) 
-      
-    }
-  )
-  */
   Board.find({}).then(function(doc) {
     doc.forEach(function(u) {
       var content = u.contents
@@ -220,7 +202,7 @@ function replaceSpace() {
     })
   })
 }
-  /*
+/*
  else if (_obj.content === '100') {
     let message = {
       "message": {
