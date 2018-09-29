@@ -45,7 +45,7 @@ const failMessage = {
 };
 //초기 상태 get
 app.get('/keyboard', function(req, res){
-  console.log('req = ',req)
+  console.log('keyboard ')
   const menu = {
     "type" : "text",
     "message" : {
@@ -108,10 +108,23 @@ app.post('/message',async function (req, res) {
     type: req.body.type,
     content: req.body.content
   };
+  var message = ''
+
   console.log(_obj.content)
+  if (_obj.content == "다시 검색") {
+console.log('alsdkfjalskd')
+    message = {
+      "message": {
+        "text" : "다시 검색합니다."
+       }
+    }
+    res.set({
+    'content-type': 'application/json'
+    }).send(JSON.stringify(message));
+    return
+  }
   var text = findNumberInStrings(_obj.content)
   console.log('text = ' + text)
-  var message = ''
   if (text) { //number 
     message = await invokeGospelSearch(text)
   }
@@ -144,6 +157,7 @@ function returnOption(boards) {
   boards.forEach( function (v, i) {
     arr.push(v.seq + "장 제목 : " + v.title)
   })
+  arr.push("다시 검색")
   const buttons = {
     "message": {
       "text": "여러 건이 검색되었습니다"
