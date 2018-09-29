@@ -121,8 +121,9 @@ app.post('/message',async function (req, res) {
     message = await invokeGospelSearch(text)
   }
   else {
-    boards = await getGospelLyrics(_obj.content)
-    if (boards.length == 0) {
+    var boards = await getGospelLyrics(_obj.content)
+    console.log('boards ======> ' + boards)
+    if (boards == null) {
       message = failMessage
     }
     else if (boards.length == 1) {
@@ -150,8 +151,13 @@ function returnOption(boards) {
     arr.push(v.seq + "장 제목 : " + v.title)
   })
   const buttons = {
-      "type": 'buttons',
-      "buttons": arr 
+      "message": {
+	"text": "여러건이 검색되었습니다"
+      },
+      "keyboard": {
+	"type": "buttons",
+        "buttons": arr 
+      }
   };
   return buttons
 }
@@ -162,11 +168,18 @@ async function getGospelLyrics(message) {
   var board = new Board()
   //Board.index({'$**': 'text'})
   var startTime = Date.now() 
-  Board.find({ $or: [{ "title": { $regex: message}}, {"contents": { $regex: message}} ] }, function(err, boards) {
+
+  return new Promise(function(resolve, reject ) {
+    Board.find({ $or: [{ "title": { $regex: message}}, {"contents": { $regex: message}} ] }, function(err, boards) {
+  //await Board.find({ $or: [{ "title": { $regex: message}}, {"contents": { $regex: message}} ] }   ).limit(5).exec(function(err, boards) {
+
     console.log('time = > ' + (Date.now() - startTime))
     console.log('boards = ', boards)
-    return boards 
-  }).limit(5)
+    //return new Promise(function(resolve) {
+	resolve(boards)
+}).limit(5)
+})
+
    
     /*
     var tt = Date.now()
