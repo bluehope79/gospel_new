@@ -31,7 +31,8 @@ var db = mongoose.connection
 db.on('error', console.error.bind(console, 'mongoose connection error:'))
 db.once('open', function() {
   console.log('Connected to mongodb server')
-  //getGospelLyrics()
+  //getGospelLyrics(text)
+  //replaceSpace()
 })
 
 var Board = require('./db/model/board')
@@ -56,6 +57,7 @@ app.get('/keyboard', function(req, res){
   const menu = {
     "type" : "text"
   }
+  //if (req.query.)
   res.set({
     'content-type': 'application/json'
   }).send(JSON.stringify(menu));
@@ -111,24 +113,26 @@ app.post('/message',async function (req, res) {
     type: req.body.type,
     content: req.body.content
   };
-  //console.log('req = > ', req)
   console.log(_obj.content)
-  //let message = '1'
-  // comment out using dialogflow. because it gonna use later.
-  //const result = await bot.sendToDialogFlow(_obj.content)
-  //console.log('result => ', JSON.stringify(result))
-  //message = await findIntent(result)
-   
-  //test() 
   var text = findNumberInStrings(_obj.content)
   console.log('text = ' + text)
   var message = ''
-  if (text) { // charicter
+  if (text) { //number 
     message = await invokeGospelSearch(text)
   }
   else {
-    message = await getGospelLyrics(_obj.content)
-    message = message ? message : failMessage
+    boards = await getGospelLyrics(_obj.content)
+    if (boards.length == 0) {
+      message = failMessage
+    }
+    else if (boards.length == 1) {
+      message = await invokeGospelSearch(boards[0].seq) 
+    } 
+    else {
+      message = returnOption(boards) 
+
+    }
+    //message = message ? message : failMessage
   }
 
   res.set({
@@ -139,20 +143,32 @@ const findNumberInStrings= (str) =>  {
   return str.replace(/[^0-9]/g,'')
 }
 
+function returnOption(boards) {
+
+  var arr = []
+  boards.forEach( function (v, i) {
+    arr.push(v.seq + "장 제목 : " + v.title)
+  })
+  const buttons = {
+      "type": 'buttons',
+      "buttons": arr 
+  };
+  return buttons
+}
 
 async function getGospelLyrics(message) {
-  message = "\""+ message + "\""
+  //message = "\""+ message.replace(/ /gi, "") + "\""
   console.log(message)
   var board = new Board()
   //Board.index({'$**': 'text'})
   var startTime = Date.now() 
-    /*
   Board.find({ $or: [{ "title": { $regex: message}}, {"contents": { $regex: message}} ] }, function(err, boards) {
     console.log('time = > ' + (Date.now() - startTime))
     console.log('boards = ', boards)
-  })
+    return boards 
+  }).limit(5)
    
-   */
+    /*
     var tt = Date.now()
   await Board.find({ $text: { $search: message }}, {score : { $meta: "textScore"}}).sort( {
     score: { $meta: 'textScore'} 
@@ -162,7 +178,34 @@ async function getGospelLyrics(message) {
       return boards.length > 0 ? boards[0].seq : null
     }) 
 
+*/
 
+}
+
+function replaceSpace() {
+  var board = new Board()
+    /*j
+  Board.update({},
+    function(err, doc) {
+      var tt = doc.title
+      tt = tt.replace(/ /gi, "")
+      console.log('doc.title = ' + tt)
+      //      Board.update({"_id": doc._id}, {"$set": { "title": doc.title}}) 
+      
+    }
+  )
+  */
+  Board.find({}).then(function(doc) {
+    doc.forEach(function(u) {
+      var content = u.contents
+      var title = u.title
+      content = content.replace(/ /gi, "")
+      title = title.replace(/ /gi, "")
+      Board.update({_id: u._id}, {"$set": { "title": title, "contents": content}}, function(err, output) {
+      } 
+      )
+    })
+  })
 }
   /*
  else if (_obj.content === '100') {

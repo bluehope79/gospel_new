@@ -9,4 +9,4 @@ var boardSchema = new Schema({
 
 //boardSchema.index({ 'title': 'text', 'contents': 'text'})
 console.log('boardSchema')
-module.exports = mongoose.model('hymndata', boardSchema)
+module.exports = mongoose.model('nowrap_data', boardSchema)
