@@ -222,8 +222,9 @@ function replaceSpace() {
   */
 
 //9000포트 서버 ON
-//app.listen(9000, function() {
-//});
+app.listen(9000, function() {
+  console.log('start server 9000')
+});
 //"message_button": { "label": "주유 쿠폰 받기","url": "https://naver.com"}
 //
 
