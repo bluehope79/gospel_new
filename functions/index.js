@@ -12,6 +12,8 @@ const axios = require('axios')
 const googleImage  = require('./http-google')
 const bot = require('./bot')
 
+const mongoose = require('mongoose')
+
 const gospelIntent = '찬송가찾기'
 
 
@@ -20,6 +22,19 @@ app.use(bodyParser.json());
   // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// mongoose connect
+mongoose.connect('mongodb://soo:fhrmdhs12@ds245532.mlab.com:45532/hymns', {
+  useNewUrlParser: true,
+})// option)
+mongoose.set('useCreateIndex',true)
+var db = mongoose.connection
+db.on('error', console.error.bind(console, 'mongoose connection error:'))
+db.once('open', function() {
+  console.log('Connected to mongodb server')
+  //getGospelLyrics()
+})
+
+var Board = require('./db/model/board')
 
 
 const failMessage = {
@@ -98,16 +113,57 @@ app.post('/message',async function (req, res) {
   };
   //console.log('req = > ', req)
   console.log(_obj.content)
-  let message = ''
-  const result = await bot.sendToDialogFlow(_obj.content)
-  console.log('result => ', JSON.stringify(result))
-  message = await findIntent(result)
+  //let message = '1'
+  // comment out using dialogflow. because it gonna use later.
+  //const result = await bot.sendToDialogFlow(_obj.content)
+  //console.log('result => ', JSON.stringify(result))
+  //message = await findIntent(result)
    
+  //test() 
+  var text = findNumberInStrings(_obj.content)
+  console.log('text = ' + text)
+  var message = ''
+  if (text) { // charicter
+    message = await invokeGospelSearch(text)
+  }
+  else {
+    message = await getGospelLyrics(_obj.content)
+    message = message ? message : failMessage
+  }
+
   res.set({
     'content-type': 'application/json'
   }).send(JSON.stringify(message));
 });
+const findNumberInStrings= (str) =>  {
+  return str.replace(/[^0-9]/g,'')
+}
 
+
+async function getGospelLyrics(message) {
+  message = "\""+ message + "\""
+  console.log(message)
+  var board = new Board()
+  //Board.index({'$**': 'text'})
+  var startTime = Date.now() 
+    /*
+  Board.find({ $or: [{ "title": { $regex: message}}, {"contents": { $regex: message}} ] }, function(err, boards) {
+    console.log('time = > ' + (Date.now() - startTime))
+    console.log('boards = ', boards)
+  })
+   
+   */
+    var tt = Date.now()
+  await Board.find({ $text: { $search: message }}, {score : { $meta: "textScore"}}).sort( {
+    score: { $meta: 'textScore'} 
+  }).exec(function(err, boards) {
+      console.log('------------------------------------------\n---------------------\n' + (Date.now() - tt))
+      console.log('boards ==> ', boards)
+      return boards.length > 0 ? boards[0].seq : null
+    }) 
+
+
+}
   /*
  else if (_obj.content === '100') {
     let message = {
