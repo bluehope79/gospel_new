@@ -130,8 +130,8 @@ console.log('alsdkfjalskd')
   }
   else {
     var boards = await getGospelLyrics(_obj.content)
-    console.log('boards ======> ' + boards)
-    if (boards == null) {
+    console.log('boards ======> ' , boards)
+    if (boards == null || boards.length == 0) {
       message = failMessage
     }
     else if (boards.length == 1) {
