@@ -112,7 +112,6 @@ app.post('/message',async function (req, res) {
 
   console.log(_obj.content)
   if (_obj.content == "다시 검색") {
-console.log('alsdkfjalskd')
     message = {
       "message": {
         "text" : "다시 검색합니다."
@@ -170,8 +169,9 @@ function returnOption(boards) {
   return buttons
 }
 
-async function getGospelLyrics(message) {
+async function getGospelLyrics(msg) {
   //message = "\""+ message.replace(/ /gi, "") + "\""
+  var message = msg.replace(/ /gi, "")
   console.log(message)
   var board = new Board()
   //Board.index({'$**': 'text'})
