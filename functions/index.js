@@ -31,8 +31,8 @@ var db = mongoose.connection
 db.on('error', console.error.bind(console, 'mongoose connection error:'))
 db.once('open', async function() {
   console.log('Connected to mongodb server')
-  var message = await searchText({ content: '주님'})
-  console.log('message = ' , message)
+  //var message = await searchText({ content: '주님'})
+  //console.log('message = ' , message)
   //replaceSpace()
 })
 
