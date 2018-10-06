@@ -29,9 +29,10 @@ mongoose.connect('mongodb://soo:fhrmdhs12@ds245532.mlab.com:45532/hymns', {
 mongoose.set('useCreateIndex',true)
 var db = mongoose.connection
 db.on('error', console.error.bind(console, 'mongoose connection error:'))
-db.once('open', function() {
+db.once('open', async function() {
   console.log('Connected to mongodb server')
-  //getGospelLyrics(text)
+  var message = await searchText({ content: '주님'})
+  console.log('message = ' , message)
   //replaceSpace()
 })
 
@@ -111,8 +112,7 @@ app.post('/message',async function (req, res) {
   var message = ''
 
   console.log(_obj.content)
-  if (_obj.content == "다시 검색") {
-console.log('alsdkfjalskd')
+  if (_obj.content.indexOf("다시 검색") >= 0) {
     message = {
       "message": {
         "text" : "다시 검색합니다."
@@ -129,24 +129,30 @@ console.log('alsdkfjalskd')
     message = await invokeGospelSearch(text)
   }
   else {
-    var boards = await getGospelLyrics(_obj.content)
-    console.log('boards ======> ' + boards)
-    if (boards == null) {
-      message = failMessage
-    }
-    else if (boards.length == 1) {
-      message = await invokeGospelSearch(boards[0].seq) 
-    } 
-    else {
-      message = returnOption(boards) 
-
-    }
+    message = searchText(_obj)
   }
 
   res.set({
     'content-type': 'application/json'
   }).send(JSON.stringify(message));
 });
+
+async function searchText(_obj) {
+  var message ='' 
+  var boards = await getGospelLyrics(_obj.content)
+  console.log('boards ======> ' + boards)
+  if (boards == null) {
+    message = failMessage
+  }
+  else if (boards.length == 1) {
+    message = await invokeGospelSearch(boards[0].seq) 
+  } 
+  else {
+    message = returnOption(boards) 
+
+  }
+  return message 
+}
 const findNumberInStrings= (str) =>  {
   return str.replace(/[^0-9]/g,'')
 }
@@ -154,10 +160,17 @@ const findNumberInStrings= (str) =>  {
 function returnOption(boards) {
 
   var arr = []
-  boards.forEach( function (v, i) {
-    arr.push(v.seq + "장 제목 : " + v.title)
-  })
-  arr.push("다시 검색")
+  for (var i=0; i<boards.length ; i++) {
+    if (i >= 5) {
+      arr.push((boards.length - 5) + " 개 더 있음. 다시  검색")
+      break;
+    }
+    else {
+      arr.push(boards[i].seq + "장 : " + boards[i].title)
+    }
+  }
+  
+      //arr.push("다시 검색")
   const buttons = {
     "message": {
       "text": "여러 건이 검색되었습니다"
@@ -178,13 +191,14 @@ async function getGospelLyrics(message) {
   var startTime = Date.now() 
 
   return new Promise(function(resolve, reject ) {
-    Board.find({ $or: [{ "title": { $regex: message}}, {"contents": { $regex: message}} ] }, function(err, boards) {
+    Board.find({ "contents": { $regex: message} }, function(err, boards) {
+    //Board.find({ $or: [{ "title": { $regex: message}}, {"contents": { $regex: message}} ] }, function(err, boards) {
       //await Board.find({ $or: [{ "title": { $regex: message}}, {"contents": { $regex: message}} ] }   ).limit(5).exec(function(err, boards) {
 
       console.log('time = > ' + (Date.now() - startTime))
       //console.log('boards = ', boards)
       resolve(boards)
-    }).limit(5)
+    })//.limit(5)
   })
 
 
@@ -209,8 +223,8 @@ function replaceSpace() {
       var content = u.contents
       var title = u.title
       content = content.replace(/ /gi, "")
-      title = title.replace(/ /gi, "")
-      Board.update({_id: u._id}, {"$set": { "title": title, "contents": content}}, function(err, output) {
+      //title = title.replace(/ /gi, "")
+      Board.update({_id: u._id}, {"$set": { "contents": content}}, function(err, output) {
       } 
       )
     })
