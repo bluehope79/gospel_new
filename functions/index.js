@@ -183,8 +183,9 @@ function returnOption(boards) {
   return buttons
 }
 
-async function getGospelLyrics(message) {
+async function getGospelLyrics(msg) {
   //message = "\""+ message.replace(/ /gi, "") + "\""
+  var message = msg.replace(/ /gi, "")
   console.log(message)
   var board = new Board()
   //Board.index({'$**': 'text'})
