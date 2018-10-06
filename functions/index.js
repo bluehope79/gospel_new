@@ -129,7 +129,7 @@ app.post('/message',async function (req, res) {
     message = await invokeGospelSearch(text)
   }
   else {
-    message = searchText(_obj)
+    message = await searchText(_obj)
   }
 
   res.set({
@@ -162,7 +162,7 @@ function returnOption(boards) {
   var arr = []
   for (var i=0; i<boards.length ; i++) {
     if (i >= 5) {
-      arr.push((boards.length - 5) + " 개 더 있음. 다시  검색")
+      arr.push((boards.length - 5) + " 개 더 있음. \n\n다시 검색")
       break;
     }
     else {
