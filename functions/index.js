@@ -41,7 +41,7 @@ var Board = require('./db/model/board')
 
 const failMessage = {
   "message": {
-    "text" : "죄송합니다. 찾지 못했습니다"
+    "text" : "입력 텍스트가 포함된 찬송가를 찾을 수 없습니다" 
   } 
 };
 //초기 상태 get
@@ -126,7 +126,16 @@ app.post('/message',async function (req, res) {
   var text = findNumberInStrings(_obj.content)
   console.log('text = ' + text)
   if (text) { //number 
-    message = await invokeGospelSearch(text)
+    if (text > 0 && text < 646) { 
+      message = await invokeGospelSearch(text)
+    }
+    else {
+      message = {
+	"message": {
+	  "text": "존재 하는 찬송가 번호가 아닙니다"
+        } 
+      }
+    }
   }
   else {
     message = await searchText(_obj)
@@ -141,7 +150,7 @@ async function searchText(_obj) {
   var message ='' 
   var boards = await getGospelLyrics(_obj.content)
   console.log('boards ======> ' + boards)
-  if (boards == null) {
+  if (boards == null || boards.length == 0) {
     message = failMessage
   }
   else if (boards.length == 1) {
@@ -197,8 +206,14 @@ async function getGospelLyrics(msg) {
       //await Board.find({ $or: [{ "title": { $regex: message}}, {"contents": { $regex: message}} ] }   ).limit(5).exec(function(err, boards) {
 
       console.log('time = > ' + (Date.now() - startTime))
-      //console.log('boards = ', boards)
-      resolve(boards)
+      console.log('getGospelLyrics / error = ' + err)
+      console.log('in getGospelLyrics / boards = ', boards)
+      if (boards == null || boards.length == 0) {
+	resolve(null)
+      } 
+      else {
+        resolve(boards)
+      }
     })//.limit(5)
   })
 
