@@ -1,4 +1,4 @@
-//const functions = require('firebase-functions');
+const functions = require('firebase-functions');
 const express = require('express')
 //const firebase = require('firebase-admin')
 const bodyParser = require('body-parser')
@@ -11,9 +11,6 @@ const axios = require('axios')
 
 const googleImage  = require('./http-google')
 const bot = require('./bot')
-const path = require('path');
-var hymns = require('./routes/hymns')
-var port = process.env.PORT || 9000
 
 const mongoose = require('mongoose')
 
@@ -24,8 +21,6 @@ const gospelIntent = '찬송가찾기'
 app.use(bodyParser.json());
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: true }));
-app.set('views', path.join(__dirname, 'views'))
-app.set('view engine', 'ejs')
 
 // mongoose connect
 mongoose.connect('mongodb://soo:fhrmdhs12@ds245532.mlab.com:45532/hymns', {
@@ -43,7 +38,6 @@ db.once('open', async function() {
 
 var Board = require('./db/model/board')
 
-app.use('/hymns', hymns)
 
 const failMessage = {
   "message": {
@@ -266,12 +260,11 @@ function replaceSpace() {
   }
   */
 
-app.use(express.static('./public'))
 //9000포트 서버 ON
-app.listen(port, function() {
+app.listen(9000, function() {
   console.log('start server 9000')
 });
 //"message_button": { "label": "주유 쿠폰 받기","url": "https://naver.com"}
 //
 
-//exports.app = functions.https.onRequest(app)
+exports.app = functions.https.onRequest(app)
