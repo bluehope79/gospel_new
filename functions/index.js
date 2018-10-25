@@ -8,6 +8,7 @@ const app = express()
 const api_credentials = "AIzaSyBMQQkHxrcsbaeznNQYB4z-J64WZd5_Frw";
 let sessionId = '6ac7bd60-96a7-11e8-aaf1-2be61153eaa1'
 const axios = require('axios')
+const imageSize = require('image-size')
 
 const googleImage  = require('./http-google')
 const bot = require('./bot')
@@ -93,11 +94,22 @@ async function invokeGospelSearch(value) {
 
   return failMessage 
 }
+
+function makeSearch(value) {
+  const homepage = 'http://ec2-18-217-67-252.us-east-2.compute.amazonaws.com:9000/hymns/'+value
+  const link = 'http://ec2-18-217-67-252.us-east-2.compute.amazonaws.com:9000/asset/hymns' + value +'.jpg'
+  const dimensions = imageSize('./public/asset/hymns' + value + '.jpg')
+  const width = dimensions.width
+  const height = dimensions.height
+  console.log('width = ' + width + ', height = ' + height)
+  return sendImage(link, homepage, width, height, value)
+}
+
 const sendImage = (url, homepage, width, height, value)=> {
   const message = {
     "message": {
       "text" : "찬송가 " + value + '장',
-      "photo": { "url": url, "width": width, "height": height},
+      "photo": { "url": url , "width": width, "height": height},
       "message_button": {
         "label": "link",
         "url": homepage
@@ -133,7 +145,8 @@ app.post('/message',async function (req, res) {
   console.log('text = ' + text)
   if (text) { //number 
     if (text > 0 && text < 646) { 
-      message = await invokeGospelSearch(text)
+      //message = await invokeGospelSearch(text)
+	message = makeSearch(text)
     }
     else {
       message = {

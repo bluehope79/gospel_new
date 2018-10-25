@@ -25,7 +25,7 @@ var download = function(uri, filename, callback) {
 //
 //
 const go = async () =>  {
-  for (var i=1; i<646; i++) { 
+  for (var i=240; i<646; i++) { 
     var name = 'hymns' + i + '.jpg';
     var path1 ='https://prayertents-yjnsqvzy.netdna-ssl.com/bible/newhymnsdata/' + make000Text(i) + '.jpg'
     console.log('path = ' + path1)
