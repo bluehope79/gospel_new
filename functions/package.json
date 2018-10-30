@@ -21,8 +21,13 @@
     "firebase-functions": "^2.0.3",
     "fs": "0.0.1-security",
     "google-images": "^2.1.0",
+<<<<<<< HEAD
     "mongoose": "^5.2.15",
     "morgan": "^1.9.1"
+=======
+    "image-size": "^0.6.3",
+    "mongoose": "^5.2.15"
+>>>>>>> 4638ae6753872be91a874fd743730fe6c5b5b518
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
