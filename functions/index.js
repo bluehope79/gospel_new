@@ -43,6 +43,7 @@ db.once('open', async function() {
 })
 
 var Board = require('./db/model/board')
+var ori_board = require('./db/model/ori_board')
 
 app.use('/hymns', hymns)
 
@@ -95,13 +96,18 @@ async function invokeGospelSearch(value) {
   return failMessage 
 }
 
-function makeSearch(value) {
+async function makeSearching(value) {
   const homepage = 'http://ec2-18-217-67-252.us-east-2.compute.amazonaws.com:9000/hymns/'+value
   const link = 'http://ec2-18-217-67-252.us-east-2.compute.amazonaws.com:9000/asset/hymns' + value +'.jpg'
   const dimensions = imageSize('./public/asset/hymns' + value + '.jpg')
   const width = dimensions.width
   const height = dimensions.height
   console.log('width = ' + width + ', height = ' + height)
+  if (value == 371 || value == 559) {
+    var board = await getLyricsWithSeq(value)
+    console.log('makeSearching / board = ' + board.contents)
+    return sendLyrics(homepage, value, board.contents)
+  }
   return sendImage(link, homepage, width, height, value)
 }
 
@@ -111,13 +117,25 @@ const sendImage = (url, homepage, width, height, value)=> {
       "text" : "찬송가 " + value + '장',
       "photo": { "url": url , "width": width, "height": height},
       "message_button": {
-        "label": "link",
+        "label": "악보 보기",
         "url": homepage
       }
     } 
   };
   return message
 }  
+const sendLyrics = (homepage, value, text) => {
+  const message = {
+    "message" : {
+      "text" : "찬송가 " + value + "장 \n\n" + text,
+      "message_button": {
+        "label": "악보 보기",
+        "url": homepage
+      }
+    }
+  }
+  return message
+}
 
 app.post('/message',async function (req, res) {
 
@@ -142,10 +160,11 @@ app.post('/message',async function (req, res) {
   }
   var text = findNumberInStrings(_obj.content)
   console.log('text = ' + text)
+  
   if (text) { //number 
     if (text > 0 && text < 646) { 
       //message = await invokeGospelSearch(text)
-	message = makeSearch(text)
+	message = makeSearching(text)
     }
     else {
       message = {
@@ -172,7 +191,9 @@ async function searchText(_obj) {
     message = failMessage
   }
   else if (boards.length == 1) {
-    message = await invokeGospelSearch(boards[0].seq) 
+    //message = await invokeGospelSearch(boards[0].seq) 
+
+    message = makeSearching(boards[0].seq)
   } 
   else {
     message = returnOption(boards) 
@@ -208,6 +229,16 @@ function returnOption(boards) {
     }
   };
   return buttons
+}
+
+
+async function getLyricsWithSeq(seq) {
+  return new Promise(function(resolve, reject) {
+    ori_board.find({"seq": seq}), function(err, boards) {
+      console.log('boards = ', boards)
+      resolve(boards[0])
+    }
+  })
 }
 
 async function getGospelLyrics(msg) {
