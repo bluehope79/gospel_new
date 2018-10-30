@@ -106,7 +106,6 @@ const sendImage = (url, homepage, width, height, value)=> {
   };
   return message
 }  
-// 메시지 처리
 
 app.post('/message',async function (req, res) {
 
