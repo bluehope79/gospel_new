@@ -164,7 +164,6 @@ app.post('/message',async function (req, res) {
   console.log('text = ' + text)
 
   if (text) { //number 
-    if (text == _obj.content) { 
       if (text > 0 && text < 646) { 
         //message = await invokeGospelSearch(text)
         message = await makeSearching(text)
@@ -176,14 +175,15 @@ app.post('/message',async function (req, res) {
           } 
         }
       }
-    }
+    /*}
     else {
       message = {
-        "meesage": {
+        "message": {
           "text": "찬송가 번호나 가사를 입력해주세요"
         }
       }
     }
+*/
   }
   else {
     message = await searchText(_obj)
@@ -221,7 +221,7 @@ function returnOption(boards) {
   var arr = []
   for (var i=0; i<boards.length ; i++) {
     if (i >= 5) {
-      arr.push((boards.length - 5) + " 개 더 있음. \n\n다시 검색")
+      arr.push((boards.length - 5) + " 개 더 있음. 다시 검색")
       break;
     }
     else {
