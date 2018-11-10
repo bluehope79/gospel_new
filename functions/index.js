@@ -104,10 +104,12 @@ async function makeSearching(value) {
   const height = dimensions.height
   console.log('width = ' + width + ', height = ' + height)
   if (value == 371 || value == 559) {
+    console.log('makeSearching / value = ' + value)
     var board = await getLyricsWithSeq(value)
     console.log('makeSearching / board = ' + board.contents)
-    return sendLyrics(homepage, value, board.contents)
+    return sendLyrics(link, homepage, value, board.contents)
   }
+  console.log('makeSearching / sendImage')
   return sendImage(link, homepage, width, height, value)
 }
 
@@ -120,11 +122,12 @@ const sendImage = (url, homepage, width, height, value)=> {
         "label": "악보 보기",
         "url": homepage
       }
+
     } 
   };
   return message
 }  
-const sendLyrics = (homepage, value, text) => {
+const sendLyrics = (url, homepage, value, text) => {
   const message = {
     "message" : {
       "text" : "찬송가 " + value + "장 \n\n" + text,
@@ -164,7 +167,7 @@ app.post('/message',async function (req, res) {
   if (text) { //number 
     if (text > 0 && text < 646) { 
       //message = await invokeGospelSearch(text)
-	message = makeSearching(text)
+	message = await makeSearching(text)
     }
     else {
       message = {
@@ -234,10 +237,14 @@ function returnOption(boards) {
 
 async function getLyricsWithSeq(seq) {
   return new Promise(function(resolve, reject) {
-    ori_board.find({"seq": seq}), function(err, boards) {
+    ori_board.find({"seq": seq}, function(err, boards) {
+      if (err) {
+	console.log('getLyricsWithSeq / error = ', err)
+	resolve(null)
+      }
       console.log('boards = ', boards)
       resolve(boards[0])
-    }
+    })
   })
 }
 
