@@ -103,14 +103,13 @@ async function makeSearching(value) {
   const width = dimensions.width
   const height = dimensions.height
   console.log('width = ' + width + ', height = ' + height)
-  if (value == 371 || value == 559) {
-    console.log('makeSearching / value = ' + value)
-    var board = await getLyricsWithSeq(value)
-    console.log('makeSearching / board = ' + board.contents)
-    return sendLyrics(link, homepage, value, board.contents)
-  }
-  console.log('makeSearching / sendImage')
-  return sendImage(link, homepage, width, height, value)
+  console.log('makeSearching / value = ' + value)
+  var board = await getLyricsWithSeq(value)
+  console.log('makeSearching / board = ' + board.contents)
+  
+  return sendLyrics(link, homepage, value, board.contents)
+  //console.log('makeSearching / sendImage')
+  //return sendImage(link, homepage, width, height, value)
 }
 
 const sendImage = (url, homepage, width, height, value)=> {
@@ -154,26 +153,35 @@ app.post('/message',async function (req, res) {
     message = {
       "message": {
         "text" : "다시 검색합니다."
-       }
+      }
     }
     res.set({
-    'content-type': 'application/json'
+      'content-type': 'application/json'
     }).send(JSON.stringify(message));
     return
   }
   var text = findNumberInStrings(_obj.content)
   console.log('text = ' + text)
-  
+
   if (text) { //number 
-    if (text > 0 && text < 646) { 
-      //message = await invokeGospelSearch(text)
-	message = await makeSearching(text)
+    if (text == _obj.content) { 
+      if (text > 0 && text < 646) { 
+        //message = await invokeGospelSearch(text)
+        message = await makeSearching(text)
+      }
+      else {
+        message = {
+          "message": {
+            "text": "존재 하는 찬송가 번호가 아닙니다"
+          } 
+        }
+      }
     }
     else {
       message = {
-	"message": {
-	  "text": "존재 하는 찬송가 번호가 아닙니다"
-        } 
+        "meesage": {
+          "text": "찬송가 번호나 가사를 입력해주세요"
+        }
       }
     }
   }
