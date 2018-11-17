@@ -1,29 +1,19 @@
-//const functions = require('firebase-functions');
 const express = require('express')
-//const firebase = require('firebase-admin')
 const bodyParser = require('body-parser')
 const app = express()
 
-// dialogflow
-const api_credentials = "AIzaSyBMQQkHxrcsbaeznNQYB4z-J64WZd5_Frw";
-let sessionId = '6ac7bd60-96a7-11e8-aaf1-2be61153eaa1'
 const axios = require('axios')
 const imageSize = require('image-size')
 
 const googleImage  = require('./http-google')
-const bot = require('./bot')
 const path = require('path');
 var hymns = require('./routes/hymns')
 var port = process.env.PORT || 9000
 
 const mongoose = require('mongoose')
 
-const gospelIntent = '찬송가찾기'
 
-
-// parse application/json
 app.use(bodyParser.json());
-// parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set('views', path.join(__dirname, 'views'))
 app.set('view engine', 'ejs')
@@ -37,9 +27,6 @@ var db = mongoose.connection
 db.on('error', console.error.bind(console, 'mongoose connection error:'))
 db.once('open', async function() {
   console.log('Connected to mongodb server')
-  //var message = await searchText({ content: '주님'})
-  //console.log('message = ' , message)
-  //replaceSpace()
 })
 
 var Board = require('./db/model/board')
@@ -52,6 +39,12 @@ const failMessage = {
     "text" : "입력 텍스트가 포함된 찬송가를 찾을 수 없습니다" 
   } 
 };
+const _prefix = "장 : ";
+const _prefixSeqText = "장"
+const FAIL_WRONG_TEXT = "찬송가 번호나 찬송가 가사를 입력해주세요\n 예1) 424 \n 예2) 사철의 봄바람"
+const FAIL_WRONG_SEQ = "존재 하는 찬송가 번호가 아닙니다"
+const RETRY_SEARCH = "다시 검색합니다"
+
 //초기 상태 get
 app.get('/keyboard', function(req, res){
   console.log('keyboard ')
@@ -61,40 +54,80 @@ app.get('/keyboard', function(req, res){
       "text" : "샬롬. 찬송가 검색을 위해 찬송가 장수나 가사를 입력해주세요."
     }
   }
-  //if (req.query.)
   res.set({
     'content-type': 'application/json'
   }).send(JSON.stringify(menu));
 });
 
-const initialize = (result) => {
-}
+app.post('/message',async function (req, res) {
+  const _obj = {
+    user_key: req.body.user_key,
+    type: req.body.type,
+    content: req.body.content
+  };
+  var message = ''
 
-const findIntent = (result) => {
-  // 배열로 오게 되어 있는데 여러 인텐트가 한꺼번에 올거 같지 않아서 일단은
-  // 1번째 인덱스에 있는 것으로만 처리.
-  // [TODO] 인텐트가 배열로 온다.
-  if (result[0].queryResult.intent.displayName == gospelIntent) {
-    return invokeGospelSearch(result[0].queryResult.parameters.fields.number.numberValue)
-  }
-  return failMessage
-
-}
-
-async function invokeGospelSearch(value) {
-  const result = await googleImage.getImageUrl("찬송가 " + value + "장")
-  console.log('get Image =>>>>> ',result.data.items)
-
-  if (result.data.items && result.data.items[0].image) {
-
-    const homepage = result.data.items[0].image.contextLink
-    const width = result.data.items[0].image.width 
-    const height = result.data.items[0].image.height
-    return sendImage(result.data.items[0].link, homepage, width, height, value) 
+  console.log(_obj.content)
+  if (_obj.content.indexOf("다시 검색") >= 0) {
+    message = {
+      "message": {
+        "text" : RETRY_SEARCH 
+      }
+    }
+    res.set({
+      'content-type': 'application/json'
+    }).send(JSON.stringify(message));
+    return
   }
 
-  return failMessage 
-}
+  var text = findNumberInStrings(_obj.content)
+  console.log('text = ' + text)
+  
+  // It use to know as from buttons text received 
+  if (_obj.content.indexOf(_prefix) > 0) {
+    message = await makeSearching(text)
+    responseWithMessage(res, message)
+    return
+  }
+
+  // If it's only number type,
+  if (text) { //number 
+    if (text == _obj.content.trim() 
+      || (text + _prefixSeqText).trim() == _obj.content.trim()) {
+
+      if (text > 0 && text < 646) { 
+        //message = await invokeGospelSearch(text)
+        message = await makeSearching(text)
+      }
+      else {
+        message = {
+          "message": {
+            "text": FAIL_WRONG_SEQ 
+          } 
+        }
+      }
+    }
+    else {
+      message = {
+        "message": {
+          "text": FAIL_WRONG_TEXT 
+        }
+      }
+
+    }
+  }
+  else {
+    message = await searchText(_obj)
+  }
+  responseWithMessage(res, message)
+
+});
+
+function responseWithMessage(res, message) {
+  res.set({
+    'content-type': 'application/json'
+  }).send(JSON.stringify(message));
+} 
 
 async function makeSearching(value) {
   const homepage = 'http://ec2-18-217-67-252.us-east-2.compute.amazonaws.com:9000/hymns/'+value
@@ -106,10 +139,8 @@ async function makeSearching(value) {
   console.log('makeSearching / value = ' + value)
   var board = await getLyricsWithSeq(value)
   console.log('makeSearching / board = ' + board.contents)
-  
+
   return sendLyrics(link, homepage, value, board.contents)
-  //console.log('makeSearching / sendImage')
-  //return sendImage(link, homepage, width, height, value)
 }
 
 const sendImage = (url, homepage, width, height, value)=> {
@@ -138,61 +169,6 @@ const sendLyrics = (url, homepage, value, text) => {
   }
   return message
 }
-
-app.post('/message',async function (req, res) {
-
-  const _obj = {
-    user_key: req.body.user_key,
-    type: req.body.type,
-    content: req.body.content
-  };
-  var message = ''
-
-  console.log(_obj.content)
-  if (_obj.content.indexOf("다시 검색") >= 0) {
-    message = {
-      "message": {
-        "text" : "다시 검색합니다."
-      }
-    }
-    res.set({
-      'content-type': 'application/json'
-    }).send(JSON.stringify(message));
-    return
-  }
-  var text = findNumberInStrings(_obj.content)
-  console.log('text = ' + text)
-
-  if (text) { //number 
-      if (text > 0 && text < 646) { 
-        //message = await invokeGospelSearch(text)
-        message = await makeSearching(text)
-      }
-      else {
-        message = {
-          "message": {
-            "text": "존재 하는 찬송가 번호가 아닙니다"
-          } 
-        }
-      }
-    /*}
-    else {
-      message = {
-        "message": {
-          "text": "찬송가 번호나 가사를 입력해주세요"
-        }
-      }
-    }
-*/
-  }
-  else {
-    message = await searchText(_obj)
-  }
-
-  res.set({
-    'content-type': 'application/json'
-  }).send(JSON.stringify(message));
-});
 
 async function searchText(_obj) {
   var message ='' 
@@ -225,11 +201,10 @@ function returnOption(boards) {
       break;
     }
     else {
-      arr.push(boards[i].seq + "장 : " + boards[i].title)
+      arr.push(boards[i].seq + _prefix + boards[i].title)
     }
   }
-  
-      //arr.push("다시 검색")
+
   const buttons = {
     "message": {
       "text": "여러 건이 검색되었습니다"
@@ -247,8 +222,8 @@ async function getLyricsWithSeq(seq) {
   return new Promise(function(resolve, reject) {
     ori_board.find({"seq": seq}, function(err, boards) {
       if (err) {
-	console.log('getLyricsWithSeq / error = ', err)
-	resolve(null)
+        console.log('getLyricsWithSeq / error = ', err)
+        resolve(null)
       }
       console.log('boards = ', boards)
       resolve(boards[0])
@@ -257,42 +232,25 @@ async function getLyricsWithSeq(seq) {
 }
 
 async function getGospelLyrics(msg) {
-  //message = "\""+ message.replace(/ /gi, "") + "\""
   var message = msg.replace(/ /gi, "")
   console.log(message)
   var board = new Board()
-  //Board.index({'$**': 'text'})
   var startTime = Date.now() 
 
   return new Promise(function(resolve, reject ) {
     Board.find({ "contents": { $regex: message} }, function(err, boards) {
-    //Board.find({ $or: [{ "title": { $regex: message}}, {"contents": { $regex: message}} ] }, function(err, boards) {
-      //await Board.find({ $or: [{ "title": { $regex: message}}, {"contents": { $regex: message}} ] }   ).limit(5).exec(function(err, boards) {
 
       console.log('time = > ' + (Date.now() - startTime))
       console.log('getGospelLyrics / error = ' + err)
       console.log('in getGospelLyrics / boards = ', boards)
       if (boards == null || boards.length == 0) {
-	resolve(null)
+        resolve(null)
       } 
       else {
         resolve(boards)
       }
     })//.limit(5)
   })
-
-
-  /*
-    var tt = Date.now()
-  await Board.find({ $text: { $search: message }}, {score : { $meta: "textScore"}}).sort( {
-    score: { $meta: 'textScore'} 
-  }).exec(function(err, boards) {
-      console.log('------------------------------------------\n---------------------\n' + (Date.now() - tt))
-      console.log('boards ==> ', boards)
-      return boards.length > 0 ? boards[0].seq : null
-    }) 
-
-*/
 
 }
 
@@ -303,33 +261,14 @@ function replaceSpace() {
       var content = u.contents
       var title = u.title
       content = content.replace(/ /gi, "")
-      //title = title.replace(/ /gi, "")
       Board.update({_id: u._id}, {"$set": { "contents": content}}, function(err, output) {
       } 
       )
     })
   })
 }
-/*
- else if (_obj.content === '100') {
-    let message = {
-      "message": {
-        "text" : "이미지다.",
-        "photo": { "url": "https://godpeople.or.kr/files/attach/images/3064898/443/353/003/818f24b2bbb6b73c366ac84cbae28428.png", "width": 1200, "height": 800}
-      }
-    };
-    res.set({
-      'content-type': 'application/json'
-    }).send(JSON.stringify(message));
-  }
-  */
-
 app.use(express.static('./public'))
 //9000포트 서버 ON
 app.listen(port, function() {
   console.log('start server 9000')
 });
-//"message_button": { "label": "주유 쿠폰 받기","url": "https://naver.com"}
-//
-
-//exports.app = functions.https.onRequest(app)
