@@ -41,7 +41,7 @@ const failMessage = {
 };
 const _prefix = "장 : ";
 const _prefixSeqText = "장"
-const FAIL_WRONG_TEXT = "찬송가 번호나 찬송가 가사를 입력해주세요\n 예1) 424 \n 예2) 사철의 봄바람"
+const FAIL_WRONG_TEXT = "찬송가 번호나 찬송가 가사를 입력해주세요\n 예1) 424 \n 예2) 사철에 봄바람"
 const FAIL_WRONG_SEQ = "존재 하는 찬송가 번호가 아닙니다"
 const RETRY_SEARCH = "다시 검색합니다"
 
